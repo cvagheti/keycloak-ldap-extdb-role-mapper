@@ -42,6 +42,12 @@ public class DbGroup2RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMap
                             .options(DbGroup2RoleLDAPStorageMapperConfig.dBEngines)
                             .defaultValue(DbGroup2RoleLDAPStorageMapperConfig.DB_ENGINE_ORACLE)
                             .add()
+                 .property().name(DbGroup2RoleLDAPStorageMapperConfig.DB_URL_ATTRIBUTE)
+                			.label("Database JDBC URL")
+                			.helpText("Database connection URL")
+                			.type(ProviderConfigProperty.STRING_TYPE)
+                			.defaultValue("")
+                			.add()                            
                 .property().name(DbGroup2RoleLDAPStorageMapperConfig.DB_IP_ATTRIBUTE)
                 			.label("Database IP or DNS address")
                 			.helpText("IP address of the database")
@@ -162,9 +168,9 @@ public class DbGroup2RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMap
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
     	
     	//Check 
-        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_IP_ATTRIBUTE,     "Database server IP address Attribute", config);
-        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_PORT_ATTRIBUTE,   "Database server TCP Port Attribute", config);
-        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_DBNAME_ATTRIBUTE, "Database name Attribute", config);
+//        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_IP_ATTRIBUTE,     "Database server IP address Attribute", config);
+//        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_PORT_ATTRIBUTE,   "Database server TCP Port Attribute", config);
+//        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_DBNAME_ATTRIBUTE, "Database name Attribute", config);
         checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_LOGIN_ATTRIBUTE,  "Database user Attribute", config);
         checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_PASSWD_ATTRIBUTE, "Database password Attribute", config);
         checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_SQL_QUERY_4_ROLES,"Database SQL Query", config);
@@ -224,6 +230,7 @@ public class DbGroup2RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMap
             	}
 
             } else {
+            		
                 	throw new ComponentValidationException("Connection to database failed, please verify settings and firewall!");
             }
         } catch (SQLException e) {

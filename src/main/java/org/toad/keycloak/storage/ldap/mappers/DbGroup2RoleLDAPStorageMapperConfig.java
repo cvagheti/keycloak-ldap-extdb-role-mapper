@@ -31,6 +31,9 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
     public static final String DB_IP_ATTRIBUTE      = "db.roles.ip.attribute";
     public static final String DB_PORT_ATTRIBUTE    = "db.roles.port.attribute";
     
+
+	public static final String DB_URL_ATTRIBUTE = "db.roles.url.attribute";
+    
     public static final String DB_SQL_QUERY_4_ROLES = "db.roles.sql.query";
     public static final String SQL_QUERY_CACHE_TTL = "db.roles.sql.query.cache.ttl";
 
@@ -54,6 +57,7 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
     
     protected static final List<String> dBEngines;
     protected static final Map<String, String> dBEnginesJDBCDriverList = new LinkedHashMap<>();
+
     
     protected final ComponentModel mapperModel;
     
@@ -83,6 +87,12 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
     
     //TODO : jdbc url depends on db engine
 	protected String getJDBCURL() {
+		
+		String connectionURL = mapperModel.getConfig().getFirst(DB_URL_ATTRIBUTE);
+		if (connectionURL != null && !connectionURL.trim().isBlank()) {
+			return connectionURL;
+		}
+		
 		String jdbcURL="";
 		
 		switch (getRDBEngine()) {
@@ -144,7 +154,7 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
 	protected int getSQLCacheTTL() {
 		String sttl = mapperModel.getConfig().getFirst(SQL_QUERY_CACHE_TTL);
 		try {
-			return new Integer(sttl).intValue();
+			return Integer.valueOf(sttl).intValue();
 		} catch (NumberFormatException nfe) {
 			nfe.printStackTrace();
 			return 60;
@@ -196,11 +206,11 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
         ds.setUrl(getJDBCURL());
         
         // the settings below are optional -- dbcp can work with defaults
-        int minIdle = new Integer(mapperModel.getConfig().getFirst(DB_POOL_MIN_IDLE)).intValue();
-        int maxIdle = new Integer(mapperModel.getConfig().getFirst(DB_POOL_MAX_IDLE)).intValue();
-        int maxOPS = new Integer(mapperModel.getConfig().getFirst(DB_POOL_MAX_OPS)).intValue();
-        int maxWait = new Integer(mapperModel.getConfig().getFirst(DB_POOL_MAX_WAIT)).intValue();
-        int maxActive = new Integer(mapperModel.getConfig().getFirst(DB_POOL_MAX_ACTIVE)).intValue();
+        int minIdle = Integer.valueOf(mapperModel.getConfig().getFirst(DB_POOL_MIN_IDLE)).intValue();
+        int maxIdle = Integer.valueOf(mapperModel.getConfig().getFirst(DB_POOL_MAX_IDLE)).intValue();
+        int maxOPS = Integer.valueOf(mapperModel.getConfig().getFirst(DB_POOL_MAX_OPS)).intValue();
+        int maxWait = Integer.valueOf(mapperModel.getConfig().getFirst(DB_POOL_MAX_WAIT)).intValue();
+        int maxActive = Integer.valueOf(mapperModel.getConfig().getFirst(DB_POOL_MAX_ACTIVE)).intValue();
         ds.setMinIdle(minIdle);
         ds.setMaxIdle(maxIdle);
         ds.setMaxOpenPreparedStatements(maxOPS);
