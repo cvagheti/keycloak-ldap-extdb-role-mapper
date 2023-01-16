@@ -25,14 +25,11 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
     public static final String DB_ENGINE_SYBASE     = "Sybase";
     public static final String DB_ENGINE_H2         = "H2 (Local only)";
 	
-    public static final String DB_DBNAME_ATTRIBUTE  = "db.roles.dbname.attribute";
     public static final String DB_LOGIN_ATTRIBUTE   = "db.roles.login.attribute";
     public static final String DB_PASSWD_ATTRIBUTE  = "db.roles.password.attribute";
-    public static final String DB_IP_ATTRIBUTE      = "db.roles.ip.attribute";
-    public static final String DB_PORT_ATTRIBUTE    = "db.roles.port.attribute";
-    
 
-	public static final String DB_URL_ATTRIBUTE = "db.roles.url.attribute";
+    
+	public static final String DB_URL_ATTRIBUTE 	= "db.roles.url.attribute";
     
     public static final String DB_SQL_QUERY_4_ROLES = "db.roles.sql.query";
     public static final String SQL_QUERY_CACHE_TTL = "db.roles.sql.query.cache.ttl";
@@ -58,7 +55,6 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
     protected static final List<String> dBEngines;
     protected static final Map<String, String> dBEnginesJDBCDriverList = new LinkedHashMap<>();
 
-    
     protected final ComponentModel mapperModel;
     
     protected BasicDataSource ds = null;
@@ -85,7 +81,6 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
         return jdbcDriver!=null ? jdbcDriver : DB_ENGINE_ORACLE;
     }
     
-    //TODO : jdbc url depends on db engine
 	protected String getJDBCURL() {
 		
 		String connectionURL = mapperModel.getConfig().getFirst(DB_URL_ATTRIBUTE);
@@ -95,57 +90,7 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
 		
 		String jdbcURL="";
 		
-		switch (getRDBEngine()) {
-		  case DB_ENGINE_ORACLE:
-			   jdbcURL = "jdbc:oracle:thin:@" + mapperModel.getConfig().getFirst(DB_IP_ATTRIBUTE)
-	    			+ ":" + mapperModel.getConfig().getFirst(DB_PORT_ATTRIBUTE) 
-	    			+ ":" + mapperModel.getConfig().getFirst(DB_DBNAME_ATTRIBUTE);
-			break;
 
-		  case DB_ENGINE_MARIADB:
-			   //doc : https://github.com/MariaDB/mariadb-connector-j
-			   //      https://mariadb.com/kb/en/library/about-mariadb-connector-j/#connection-strings
-			   jdbcURL = "jdbc:mariadb://" + mapperModel.getConfig().getFirst(DB_IP_ATTRIBUTE)
-	    			+ ":" + mapperModel.getConfig().getFirst(DB_PORT_ATTRIBUTE) 
-	    			+ "/" + mapperModel.getConfig().getFirst(DB_DBNAME_ATTRIBUTE);
-			break;
-
-		  case DB_ENGINE_MYSQL:
-			   jdbcURL = "jdbc:mysql://" + mapperModel.getConfig().getFirst(DB_IP_ATTRIBUTE)
-		    			+ ":" + mapperModel.getConfig().getFirst(DB_PORT_ATTRIBUTE) 
-		    			+ "/" + mapperModel.getConfig().getFirst(DB_DBNAME_ATTRIBUTE);
-			break;
-			
-		  case DB_ENGINE_POSTGRESQL:
-			    //doc : https://jdbc.postgresql.org/documentation/head/connect.html
-			   jdbcURL = "jdbc:postgresql://" + mapperModel.getConfig().getFirst(DB_IP_ATTRIBUTE)
-	    			+ ":" + mapperModel.getConfig().getFirst(DB_PORT_ATTRIBUTE) 
-	    			+ "/" + mapperModel.getConfig().getFirst(DB_DBNAME_ATTRIBUTE);
-			break;
-
-		  case DB_ENGINE_SQLSERVER:
-				//doc : http://jtds.sourceforge.net/faq.html#urlFormat
-			   jdbcURL = "jdbc:jtds:sqlserver://" + mapperModel.getConfig().getFirst(DB_IP_ATTRIBUTE)
-	    			+ ":" + mapperModel.getConfig().getFirst(DB_PORT_ATTRIBUTE) 
-	    			+ "/" + mapperModel.getConfig().getFirst(DB_DBNAME_ATTRIBUTE);
-			break;
-
-		  case DB_ENGINE_SYBASE:
-				//doc : http://jtds.sourceforge.net/faq.html#urlFormat
-			   jdbcURL = "jdbc:jtds:sybase://" + mapperModel.getConfig().getFirst(DB_IP_ATTRIBUTE)
-	    			+ ":" + mapperModel.getConfig().getFirst(DB_PORT_ATTRIBUTE) 
-	    			+ "/" + mapperModel.getConfig().getFirst(DB_DBNAME_ATTRIBUTE);
-			break;
-
-		  case DB_ENGINE_H2:
-				//doc : http://www.h2database.com/html/features.html#database_url
-			   jdbcURL = "jdbc:h2:file:" + mapperModel.getConfig().getFirst(DB_DBNAME_ATTRIBUTE);
-			break;
-
-		default:
-			logger.debugf("LDAP Mapper %s : JDBC Driver URL was not built as DB Engine is not recognized ", mapperModel.getName() );
-			break;
-		}
 		logger.debugf("LDAP Mapper %s : JDBC Driver URL is %s ", mapperModel.getName(), jdbcURL );
 		return jdbcURL;
 	}
@@ -190,7 +135,6 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
         return mapperModel.getConfig().getFirst(CLIENT_ID);
     }
 
-    //TODO : load correct driver if oracle, mysql, postgresql, ...
 	protected Connection getDBConnection() throws SQLException {
 		if (ds == null) {
 			initDatasource();

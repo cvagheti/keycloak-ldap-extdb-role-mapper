@@ -35,7 +35,6 @@ public class DbGroup2RoleLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
 	@Override
 	public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-       System.out.println(mapperModel.getConfig().getFirst("mode"));
         
 		// For now, import LDAP role mappings just during create
 		  if (isCreate) {

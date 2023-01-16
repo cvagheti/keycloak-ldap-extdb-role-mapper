@@ -27,14 +27,15 @@ public class DbGroup2RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMap
     public static final String PROVIDER_ID = "database-group-to-role-mapper";
 	
     protected static final List<ProviderConfigProperty> configProperties;
-   
+    
     static {    	
         configProperties = getConfigProps(null);
     }
 
     private static List<ProviderConfigProperty> getConfigProps(ComponentModel parent) {
-
+    	
         return ProviderConfigurationBuilder.create()
+      		
                 .property().name(DbGroup2RoleLDAPStorageMapperConfig.DB_ENGINE)
                             .label("Database engine")
                             .helpText("Choose your datrabase engine that store user's group/roles.")
@@ -48,24 +49,6 @@ public class DbGroup2RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMap
                 			.type(ProviderConfigProperty.STRING_TYPE)
                 			.defaultValue("")
                 			.add()                            
-                .property().name(DbGroup2RoleLDAPStorageMapperConfig.DB_IP_ATTRIBUTE)
-                			.label("Database IP or DNS address")
-                			.helpText("IP address of the database")
-                			.type(ProviderConfigProperty.STRING_TYPE)
-                			.defaultValue("MyDatabse_IP_OR_FQDN")
-                			.add()
-                .property().name(DbGroup2RoleLDAPStorageMapperConfig.DB_PORT_ATTRIBUTE)
-                			.label("Database TCP port")
-                			.helpText("IP port of the database")
-                			.type(ProviderConfigProperty.STRING_TYPE)
-                			.defaultValue("1521")
-                			.add()
-                .property().name(DbGroup2RoleLDAPStorageMapperConfig.DB_DBNAME_ATTRIBUTE)
-                			.label("Database name")
-                			.helpText("Database name. With H2 local DB, set the database path (for example C:/data/sample)")
-                			.type(ProviderConfigProperty.STRING_TYPE)
-                			.defaultValue("DBNAME")
-                			.add()
                 .property().name(DbGroup2RoleLDAPStorageMapperConfig.DB_LOGIN_ATTRIBUTE)
                 			.label("Database account login")
                 			.helpText("Database username that will be used to query the database. this user must have READ access on the requested tables")
@@ -168,9 +151,7 @@ public class DbGroup2RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMap
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
     	
     	//Check 
-//        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_IP_ATTRIBUTE,     "Database server IP address Attribute", config);
-//        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_PORT_ATTRIBUTE,   "Database server TCP Port Attribute", config);
-//        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_DBNAME_ATTRIBUTE, "Database name Attribute", config);
+        checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_URL_ATTRIBUTE, "Database jdbc URL Attribute", config);
         checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_LOGIN_ATTRIBUTE,  "Database user Attribute", config);
         checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_PASSWD_ATTRIBUTE, "Database password Attribute", config);
         checkMandatoryConfigAttribute(DbGroup2RoleLDAPStorageMapperConfig.DB_SQL_QUERY_4_ROLES,"Database SQL Query", config);
