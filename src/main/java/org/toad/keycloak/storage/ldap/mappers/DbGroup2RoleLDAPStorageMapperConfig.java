@@ -121,15 +121,16 @@ public class DbGroup2RoleLDAPStorageMapperConfig {
     public boolean isRealmRolesMapping() {
         String realmRolesMapping = mapperModel.getConfig().getFirst(USE_REALM_ROLES_MAPPING);
         boolean isRealmRole = realmRolesMapping==null || Boolean.parseBoolean(realmRolesMapping) ;
-    	logger.tracef("LDAP Mapper %s : Realm roles mapping : ", mapperModel.getName(), isRealmRole );
+    	logger.tracef("LDAP Mapper %s : Realm roles mapping : %s", mapperModel.getName(), isRealmRole );
         return isRealmRole;
     }
     
 	//From RoleMapperConfig
     public boolean isDeletingKCRolesIfRemovedFromRDB() {
         String delRolesMapping = mapperModel.getConfig().getFirst(DELETE_REALMS_IF_NOT_IN_RDB);
-    	logger.tracef("LDAP Mapper %s : Deleting roles in Keycloak : ", delRolesMapping!=null && Boolean.parseBoolean(delRolesMapping) );
-        return delRolesMapping!=null && Boolean.parseBoolean(delRolesMapping);
+    	boolean result = delRolesMapping!=null && Boolean.parseBoolean(delRolesMapping);
+		logger.tracef("LDAP Mapper %s : Deleting roles in Keycloak : %s", mapperModel.getName(), result );
+        return result;
     }
     public String getClientId() {
         return mapperModel.getConfig().getFirst(CLIENT_ID);

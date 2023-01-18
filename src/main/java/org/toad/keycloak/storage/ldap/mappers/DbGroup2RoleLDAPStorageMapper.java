@@ -4,8 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
@@ -35,36 +36,59 @@ public class DbGroup2RoleLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
 	@Override
 	public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-        
-		// For now, import LDAP role mappings just during create
-		  if (isCreate) {
+		logger.tracef("DbGroup2RoleLDAPStorageMapper.onImportUserFromLDAP()");
+		// TODO implement to import users from ldap
 
-			List<String> dbGroups = getGroupsFromDB(user.getUsername());
+	}
 
-			// Import role mappings from LDAP into Keycloak DB
-			for (String dbGroup : dbGroups) {
+	@Override
+	public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
+		logger.tracef("DbGroup2RoleLDAPStorageMapper.proxy()");
+		return new DB2LDAPRoleMappingsUserDelegate(realm, delegate, delegate.getUsername());
+	}
 
-				RoleContainerModel roleContainer = getTargetRoleContainer(realm);
-				RoleModel role = roleContainer.getRole(dbGroup);
+	@Override
+	public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
+		logger.tracef("DbGroup2RoleLDAPStorageMapper.onRegisterUserToLDAP()");
+	}
 
-				if (role == null) {
-					role = roleContainer.addRole(dbGroup);
-					logger.debugf("Adding role [%s] ", dbGroup);
-				}
+	@Override
+	public void beforeLDAPQuery(LDAPQuery query) {
+		logger.tracef("DbGroup2RoleLDAPStorageMapper.beforeLDAPQuery()");
 
-				logger.debugf("Granting role [%s] to user [%s] during user import from LDAP", dbGroup,
-						user.getUsername());
-				user.grantRole(role);
+	}
+
+	protected RoleContainerModel getTargetRoleContainer(RealmModel realm) {
+		logger.tracef("DbGroup2RoleLDAPStorageMapper.getTargetRoleContainer()");
+		boolean realmRolesMapping = config.isRealmRolesMapping();
+		if (realmRolesMapping) {
+			return realm;
+		} else {
+			String clientId = config.getClientId();
+			if (clientId == null) {
+				throw new ModelException("Using client roles mapping is requested, but parameter client.id not found!");
 			}
+			ClientModel client = realm.getClientByClientId(clientId);
+			if (client == null) {
+				throw new ModelException("Can't found requested client with clientId: " + clientId);
+			}
+			return client;
 		}
 	}
 
-	private List<String> getGroupsFromDB(String username) {
+	/**
+	 * Returns roles from database.
+	 * 
+	 * @param username
+	 * @return
+	 */
+	private Set<String> getGroupsFromDB(String username) {
+		logger.tracef("DbGroup2RoleLDAPStorageMapper.getGroupsFromDB()");
 
 		Connection connection = null;
 		PreparedStatement prep_statement = null;
 		ResultSet resultSet = null;
-		ArrayList<String> groupsFromExternalDB = new ArrayList<String>();
+		Set<String> groupsFromExternalDB = new HashSet<String>();
 		try {
 			connection = config.getDBConnection();
 			logger.debugf("LDAP Mapper %s : Executing SQL to get groups for user '%s'", mapperModel.getName(),
@@ -105,135 +129,78 @@ public class DbGroup2RoleLDAPStorageMapper extends AbstractLDAPStorageMapper {
 		return groupsFromExternalDB;
 	}
 
-	@Override
-	public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
-		return new DB2LDAPRoleMappingsUserDelegate(realm, delegate, delegate.getUsername());
-	}
-
-	protected RoleContainerModel getTargetRoleContainer(RealmModel realm) {
-		boolean realmRolesMapping = config.isRealmRolesMapping();
-		if (realmRolesMapping) {
-			return realm;
-		} else {
-			String clientId = config.getClientId();
-			if (clientId == null) {
-				throw new ModelException("Using client roles mapping is requested, but parameter client.id not found!");
-			}
-			ClientModel client = realm.getClientByClientId(clientId);
-			if (client == null) {
-				throw new ModelException("Can't found requested client with clientId: " + clientId);
-			}
-			return client;
-		}
-	}
-
-	@Override
-	public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void beforeLDAPQuery(LDAPQuery query) {
-		// TODO Auto-generated method stub
-
-	}
-
+	/**
+	 * 
+	 * @author cvagheti
+	 *
+	 */
 	public class DB2LDAPRoleMappingsUserDelegate extends UserModelDelegate {
 
 		private final RealmModel realm;
 		private final String ldapUser;
 		private final RoleContainerModel roleContainer;
 
-		// Avoid loading role mappings from LDAP more times per-request
-		private List<String> cachedRDBRoleMappings;
-		private long cacheRDBRoleTime = 0;
-
 		public DB2LDAPRoleMappingsUserDelegate(RealmModel realm, UserModel user, String ldapUsername) {
 			super(user);
 			this.realm = realm;
 			this.ldapUser = ldapUsername;
 			this.roleContainer = getTargetRoleContainer(realm);
-			// logger.debugf("DB2LDAPRoleMappingsUserDelegate object is created!");
 		}
 
+		/**
+		 * Returns the realm roles for the current user.
+		 */
 		@Override
 		public Stream<RoleModel> getRealmRoleMappingsStream() {
+			logger.tracef("DB2LDAPRoleMappingsUserDelegate.getRealmRoleMappingsStream()");
 			if (roleContainer.equals(realm)) {
-				syncRBDGroupsWithKeycloakRolesForUser(super.getRealmRoleMappingsStream());
+				getDBRoleMappingsConverted();
 			}
 			return super.getRealmRoleMappingsStream();
 		}
 
+		/**
+		 * Returns the client roles for the current user.
+		 */
 		@Override
 		public Stream<RoleModel> getClientRoleMappingsStream(ClientModel client) {
+			logger.tracef("DB2LDAPRoleMappingsUserDelegate.getClientRoleMappingsStream()");
 			if (roleContainer.equals(client)) {
-				syncRBDGroupsWithKeycloakRolesForUser(super.getClientRoleMappingsStream(client));
+				getDBRoleMappingsConverted();
 			}
 			return super.getClientRoleMappingsStream(client);
 		}
 
 		/**
-		 * Sync Group from database with Keycloak Roles
-		 * 
-		 * @param roleMappings
+		 * Return the roles for the current user.
 		 */
-		private void syncRBDGroupsWithKeycloakRolesForUser(Stream<RoleModel> roleMappings) {
-
-			// Verification du TTL de la requete
-			if (cachedRDBRoleMappings == null || isSQLCacheExpired()) {
-				logger.debugf("LDAP Mapper %s : Getting groups from DB", mapperModel.getName());
-				List<String> rdbRoles = getGroupsFromDB(ldapUser);
-
-				cachedRDBRoleMappings = rdbRoles;
-				cacheRDBRoleTime = System.currentTimeMillis();
-
-				// Always add DB Group as Keycloak role
-				for (String rDBrole : cachedRDBRoleMappings) {
-					RoleModel modelRole = roleContainer.getRole(rDBrole);
-					if (modelRole == null) {
-						// Add role to local DB
-						logger.debugf("LDAP Mapper %s : Adding role '%s' to keycloak", mapperModel.getName(), rDBrole);
-						modelRole = roleContainer.addRole(rDBrole);
-					}
-					if (!delegate.hasRole(modelRole)) {
-						logger.debugf("LDAP Mapper %s : Grant role '%s' to user '%s'", mapperModel.getName(), rDBrole,
-								delegate.getUsername());
-						delegate.grantRole(modelRole);
-					}
-				}
-
-				// Delete Roles in Keycloak DB if it's configured
-				if (config.isDeletingKCRolesIfRemovedFromRDB()) {
-					roleMappings.forEach(kcrole -> {
-						if (!rdbRoles.contains(kcrole.getName())) {
-							logger.debugf("LDAP Mapper %s : Remove role '%s' to user '%s'", mapperModel.getName(),
-									kcrole.getName(), delegate.getUsername());
-							delegate.deleteRoleMapping(kcrole);
-						}
-					});
-				}
-				
-			} else {
-				logger.debugf("LDAP Mapper %s : Using Database Cache", mapperModel.getName());
-			}
-		}
-
-		private boolean isSQLCacheExpired() {
-
-			long currentTime = System.currentTimeMillis();
-			long deltaTime = currentTime - cacheRDBRoleTime;
-
-			long ttlInms = config.getSQLCacheTTL() * 1000;
-
-			return deltaTime >= ttlInms;
-		}
-
 		@Override
 		public Stream<RoleModel> getRoleMappingsStream() {
-			syncRBDGroupsWithKeycloakRolesForUser(super.getRoleMappingsStream());
-			return super.getRoleMappingsStream();
+			logger.tracef("DB2LDAPRoleMappingsUserDelegate.getRoleMappingsStream()");
+			return getDBRoleMappingsConverted();
+		}
+
+		/**
+		 * Add user roles to local database.
+		 * 
+		 * @return
+		 */
+		protected Stream<RoleModel> getDBRoleMappingsConverted() {
+			logger.tracef("DB2LDAPRoleMappingsUserDelegate.getDBRoleMappingsConverted()");
+
+			Set<String> ldapRoles = getGroupsFromDB(ldapUser);
+			Set<RoleModel> dbRoleMappings = ldapRoles.stream().map(role -> {
+				RoleModel modelRole = roleContainer.getRole(role);
+				if (modelRole == null) {
+					// Add role to local DB
+					modelRole = roleContainer.addRole(role);
+				}
+				return modelRole;
+			}).collect(Collectors.toSet());
+
+			return dbRoleMappings.stream();
 		}
 
 	}
+
 }

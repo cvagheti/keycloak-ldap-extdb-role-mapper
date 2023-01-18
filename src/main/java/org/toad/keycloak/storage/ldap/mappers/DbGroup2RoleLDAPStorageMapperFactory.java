@@ -16,6 +16,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapperFactory;
@@ -33,6 +34,13 @@ public class DbGroup2RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMap
     }
 
     private static List<ProviderConfigProperty> getConfigProps(ComponentModel parent) {
+    	
+		if (parent != null) {
+			boolean importEnabled = new UserStorageProviderModel(parent).isImportEnabled();
+	    	logger.debugf("import enabled= %s", importEnabled);
+		}
+    	
+
     	
         return ProviderConfigurationBuilder.create()
       		
@@ -68,12 +76,6 @@ public class DbGroup2RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMap
                 			.type(ProviderConfigProperty.STRING_TYPE)
                 			.defaultValue(DbGroup2RoleLDAPStorageMapperConfig.SQL_QUERY_DEFAULT)
                 			.add()
-                .property().name(DbGroup2RoleLDAPStorageMapperConfig.SQL_QUERY_CACHE_TTL)
-    			            .label("SQL query cache TTL (s)")
-    			            .helpText("Configure the database cache in seconds")
-    			            .type(ProviderConfigProperty.STRING_TYPE)
-    			            .defaultValue("360")
-    			            .add()
                 .property().name(DbGroup2RoleLDAPStorageMapperConfig.USE_REALM_ROLES_MAPPING)
                             .label("Use Realm Roles Mapping")
                             .helpText("If true, then LDAP role mappings will be mapped to realm role mappings in Keycloak. Otherwise it will be mapped to client role mappings")
